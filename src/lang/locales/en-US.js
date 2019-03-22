@@ -160,6 +160,33 @@ export default {
         "A date and time. Allows `1970-01-01 00:00:01` UTC to `2038-01-19 03:14:07` UTC.",
       TIME: "A time. Allows `-838:59:59` to `838:59:59`.",
       YEAR: "A year. Allows `1901` to `2155` or `0000`"
+    },
+    pgsql: {
+      CHARACTER:
+        "A fixed-length non-binary string right-padded with spaces. Length can be 0 to 255 characters.",
+      "CHARACTER VARYING":
+        "A variable-length non-binary string. Length can be 0 to 65,535 characters.",
+      TEXT: "A string with no max length.",
+      JSON: "A string representing a JSON document",
+      JSONB: "A string representing a JSON document, binary encoded",
+
+      BOOLEAN: "True or false.",
+
+      SMALLINT: "A signed integer. Length is -32,768 to 32,767.",
+      INTEGER: "A signed integer. Length is -2,147,483,648 to 2,147,483,647.",
+      BIGINT:
+        "A signed integer. Length is -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.",
+
+      NUMERIC:
+        "An accurate number (eg: for currency), with 1 to 131,072 digits length (L) and 0 to 16,383 digits decimal (D). Length format: `L,D`",
+      REAL:
+        "An approximate binary number, 4 bytes with 6 decimal digits precision.",
+      DOUBLE:
+        "An approximate binary number, 8 bytes with 15 decimal digits precision.",
+
+      DATE: "A date. From 4713 BC to 5874897 AD.",
+      TIMESTAMP: "A date and time. From 4713 BC to 294276 AD",
+      TIME: "A time. From `00:00:00` to `24:00:00`."
     }
   },
   date_and_time: "Date & Time",

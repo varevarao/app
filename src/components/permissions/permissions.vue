@@ -194,6 +194,7 @@ export default {
       border-top: 1px solid var(--lightest-gray);
     }
   }
+
   /deep/ .cell {
     flex-basis: 70px;
     &:first-child {

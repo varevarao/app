@@ -12,6 +12,7 @@ yarn-error.log*
 # Ignore dev files
 nbproject
 .idea
+.vscode
 
 # Runtime data
 pids
