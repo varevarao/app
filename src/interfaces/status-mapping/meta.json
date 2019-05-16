@@ -1,0 +1,52 @@
+{
+  "name": "$t:status_mapping",
+  "version": "1.0.0",
+  "icon": "text_fields",
+  "types": ["json"],
+  "recommended": {
+    "length": 200
+  },
+  "options": {
+    "fields": {
+      "name": "$t:configuration",
+      "interface": "json",
+      "type": "JSON",
+      "options": {
+        "template": {
+          "title": {
+            "interface": "text-input",
+            "type": "string",
+            "preview": true
+          },
+          "key": {
+            "interface": "text-input",
+            "type": "string"
+          },
+          "background-color": {
+            "interface": "color",
+            "type": "string"
+          },
+          "foreground-color": {
+            "interface": "color",
+            "type": "string"
+          },
+          "published": {
+            "interface": "toggle",
+            "type": "boolean"
+          },
+          "soft-delete": {
+            "interface": "toggle",
+            "type": "boolean"
+          }
+        }
+      },
+      "length": 200
+    }
+  },
+  "translation": {
+    "en-US": {
+      "status_mapping": "Status Mapping",
+      "configuration": "Configuration"
+    }
+  }
+}
