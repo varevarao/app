@@ -7,10 +7,9 @@
   "scripts": {
     "build": "vue-cli-service build",
     "test": "vue-cli-service lint",
-    "build-storybook": "build-storybook",
     "dev": "vue-cli-service serve",
-    "storybook:build": "vue-cli-service storybook:build -c config/storybook",
-    "storybook:serve": "vue-cli-service storybook:serve -p 6006 -c config/storybook"
+    "storybook:build": "vue-cli-service storybook:build -c ./.storybook",
+    "storybook:serve": "vue-cli-service storybook:serve -p 6006 -c ./.storybook"
   },
   "dependencies": {
     "@directus/extension-toolkit": "0.0.5",
