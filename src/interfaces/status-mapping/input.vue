@@ -1,18 +1,20 @@
 <template>
   <div class="status-mapping">
     <div class="boxes">
-      <Box
-        v-for="(value, key) in boxes"
-        :key="key"
-        :id="key"
-        :headers="headers"
-        :fields="formFields"
-        :data="value"
-        :open="key == open"
-        @stage-value="stageValue"
-        @open="openBox(key)"
-        @delete="deleteBox(key)"
-      ></Box>
+      <draggable v-model="boxes">
+        <Box
+          v-for="(value, index) in boxes"
+          :key="index"
+          :id="index"
+          :headers="headers"
+          :fields="formFields"
+          :data="value"
+          :open="index == open"
+          @stage-value="stageValue"
+          @open="openBox(index)"
+          @delete="deleteBox(index)"
+        ></Box>
+      </draggable>
     </div>
     <v-button icon="add" @click="addBox">Add Status</v-button>
   </div>
@@ -48,30 +50,26 @@ export default {
     },
     boxes: {
       get() {
-        return this.$lodash.cloneDeep(this.value) || {};
+        return this.$lodash.values(this.value) || [];
       },
       set(value) {
-        this.$emit("input", value);
+        var obj = {};
+        for (var i = 0; i < value.length; i++) {
+          obj[i] = value[i];
+        }
+        this.$emit("input", obj);
       }
     }
   },
   methods: {
     addBox() {
-      var keys = this.$lodash.keys(this.boxes);
-      var highest = 0;
-      for (var i = 0; i < keys.length; i++) {
-        var value = parseInt(keys[i]);
-        highest = value > highest ? value : highest;
-      }
-      highest++;
-
       var box = {};
       this.$lodash.forOwn(this.options.fields, (value, key) => {
         box[key] = null;
       });
 
-      this.open = highest;
-      this.$set(this.boxes, highest, box);
+      this.open = this.boxes.length;
+      this.boxes.push(box);
       this.boxes = this.boxes;
     },
     deleteBox(key) {
