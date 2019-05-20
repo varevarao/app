@@ -3,11 +3,18 @@
     <div class="header" @click="$emit('open')">
       <div class="start">
         <v-icon name="drag_handle"></v-icon>
-        <!-- <v-ext-display></v-ext-display> -->
+        <v-ext-display
+          v-for="(value, key) in headers"
+          :key="key"
+          :interface-type="value.interface"
+          type="null"
+          :name="value.field"
+          :value="data[key]"
+        ></v-ext-display>
       </div>
       <div class="end">
         <v-icon :name="open ? 'unfold_less' : 'unfold_more'"></v-icon>
-        <v-icon name="delete"></v-icon>
+        <v-icon name="delete" @click.native.stop="$emit('delete')"></v-icon>
       </div>
     </div>
     <div class="container">
@@ -22,13 +29,17 @@
 
 <script>
 export default {
-  props: ["id", "fields", "data", "open"],
+  props: ["id", "headers", "fields", "data", "open"],
   computed: {},
   methods: {}
 };
 </script>
 
 <style lang="scss" scoped>
+i {
+  cursor: pointer;
+}
+
 .box {
   background-color: var(--lightest-gray);
   border-radius: var(--border-radius);
@@ -57,6 +68,17 @@ export default {
       height: 2px;
       background-color: var(--lighter-gray);
       opacity: 0.1;
+    }
+
+    .start {
+      display: flex;
+      align-items: center;
+
+      .v-ext-display {
+        color: var(--darker-gray);
+        font-size: 14px;
+        margin: 10px;
+      }
     }
   }
 

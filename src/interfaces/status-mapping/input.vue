@@ -5,11 +5,13 @@
         v-for="(value, key) in boxes"
         :key="key"
         :id="key"
+        :headers="headers"
         :fields="formFields"
         :data="value"
         :open="key == open"
         @stage-value="stageValue"
         @open="openBox(key)"
+        @delete="deleteBox(key)"
       ></Box>
     </div>
     <v-button icon="add" @click="addBox">Add Status</v-button>
@@ -24,7 +26,6 @@ export default {
   mixins: [mixin],
   data() {
     return {
-      boxes: null,
       open: null
     };
   },
@@ -32,13 +33,26 @@ export default {
     Box
   },
   computed: {
+    headers() {
+      return this.$lodash.pickBy(this.options.fields, value => {
+        return value.hasOwnProperty("preview") && value.preview;
+      });
+    },
     formFields() {
       var fields = this.options.fields;
       this.$lodash.forOwn(fields, (value, key) => {
         fields[key].hidden_detail = false;
-        fields[key].field = key;
+        if (!fields[key].hasOwnProperty("field")) fields[key].field = key;
       });
       return fields;
+    },
+    boxes: {
+      get() {
+        return this.$lodash.cloneDeep(this.value) || {};
+      },
+      set(value) {
+        this.$emit("input", value);
+      }
     }
   },
   methods: {
@@ -50,16 +64,23 @@ export default {
         highest = value > highest ? value : highest;
       }
       highest++;
-      this.$set(this.boxes, highest, {});
 
+      var box = {};
       this.$lodash.forOwn(this.options.fields, (value, key) => {
-        this.boxes[highest][key] = null;
+        box[key] = null;
       });
-      this.$emit("input", this.boxes);
+
+      this.open = highest;
+      this.$set(this.boxes, highest, box);
+      this.boxes = this.boxes;
+    },
+    deleteBox(key) {
+      delete this.boxes[key];
+      this.boxes = this.boxes;
     },
     stageValue({ id, data }) {
       this.$set(this.boxes[id], data.field, data.value);
-      this.$emit("input", this.boxes);
+      this.boxes = this.boxes;
     },
     openBox(id) {
       if (this.open == id) {
@@ -68,9 +89,6 @@ export default {
         this.open = id;
       }
     }
-  },
-  created() {
-    this.boxes = Object.assign({}, this.value) || {};
   }
 };
 </script>
