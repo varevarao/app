@@ -22,7 +22,7 @@
       :breadcrumb="breadcrumb"
       :info-toggle="!newItem && !batch && !activityDetail"
       :icon-link="singleItem ? null : `/collections/${collection}`"
-      :icon="singleItem ? collectionInfo.icon : 'arrow_back'"
+      :icon="singleItem ? collectionInfo.icon || 'box' : 'arrow_back'"
       item-detail
     >
       <template v-if="status" slot="title">
@@ -58,17 +58,7 @@
           :disabled="!editing"
           :loading="saving"
           :label="$t('save')"
-          :options="
-            !editing
-              ? {
-                  copy: $t('save_as_copy')
-                }
-              : {
-                  stay: $t('save_and_stay'),
-                  add: $t('save_and_add'),
-                  copy: $t('save_as_copy')
-                }
-          "
+          :options="saveOptions"
           icon="check"
           color="action"
           hover-color="success"
@@ -278,6 +268,23 @@ export default {
     };
   },
   computed: {
+    saveOptions() {
+      if (this.singleItem) {
+        return {};
+      }
+
+      if (this.editing) {
+        return {
+          stay: this.$t("save_and_stay"),
+          add: this.$t("save_and_add"),
+          copy: this.$t("save_as_copy")
+        };
+      }
+
+      return {
+        copy: this.$t("save_as_copy")
+      };
+    },
     breadcrumb() {
       if (this.collection === "directus_users") {
         let crumbName = this.$t("editing_item");
@@ -366,7 +373,7 @@ export default {
       return this.$store.state.collections[this.collection];
     },
     defaultValues() {
-      return this.$lodash.mapValues(this.fields, field => {
+      return _.mapValues(this.fields, field => {
         if (field.type === "array") {
           return [field.default_value];
         }
@@ -410,7 +417,7 @@ export default {
       if (!this.collectionInfo.status_mapping || !this.statusField) return null;
 
       const statusKeys = Object.keys(this.collectionInfo.status_mapping);
-      const index = this.$lodash.findIndex(Object.values(this.collectionInfo.status_mapping), {
+      const index = _.findIndex(Object.values(this.collectionInfo.status_mapping), {
         soft_delete: true
       });
       return statusKeys[index];
@@ -420,7 +427,7 @@ export default {
       return this.collectionInfo && this.collectionInfo.single === true;
     },
     primaryKeyField() {
-      return this.$lodash.find(this.fields, { primary_key: true }).field;
+      return _.find(this.fields, { primary_key: true }).field;
     },
     batch() {
       return this.primaryKey.includes(",");
@@ -428,7 +435,7 @@ export default {
     statusField() {
       if (!this.fields) return null;
       return (
-        this.$lodash.find(
+        _.find(
           Object.values(this.fields),
           field => field.type && field.type.toLowerCase() === "status"
         ) || {}
@@ -444,7 +451,7 @@ export default {
       if (this.batch) {
         if (this.statusField) {
           const statuses = this.savedValues.map(item => item[this.statusField]);
-          return this.$lodash.merge({}, ...statuses.map(status => permission.statuses[status]));
+          return _.merge({}, ...statuses.map(status => permission.statuses[status]));
         }
 
         return permission;
@@ -558,7 +565,7 @@ export default {
   },
   methods: {
     stageDefaultValues() {
-      this.$lodash.forEach(this.defaultValues, (value, field) => this.stageValue({ field, value }));
+      _.forEach(this.defaultValues, (value, field) => this.stageValue({ field, value }));
     },
     stageValue({ field, value }) {
       this.$store.dispatch("stageValue", { field, value });
@@ -610,7 +617,7 @@ export default {
         const values = Object.assign({}, this.values);
 
         // Delete fields that shouldn't / can't be duplicated
-        this.$lodash.forEach(this.fields, (info, fieldName) => {
+        _.forEach(this.fields, (info, fieldName) => {
           if (info.primary_key === true) delete values[fieldName];
 
           switch (info.type.toLowerCase()) {
@@ -773,7 +780,7 @@ export default {
                 comment: act.comment
               };
             }),
-            revisions: this.$lodash.keyBy(revisions, "activity")
+            revisions: _.keyBy(revisions, "activity")
           };
         })
         .then(({ activity, revisions }) => {
