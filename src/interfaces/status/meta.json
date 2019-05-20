@@ -19,46 +19,40 @@
     "status_mapping": {
       "name": "$t:status_mapping",
       "comment": "$t:status_mapping_comment",
-      "interface": "json",
-      "type": "JSON",
+      "interface": "status-mapping",
       "options": {
-        "language": "application/json",
-        "template": {
+        "fields": {
+          "name": {
+            "width": "full",
+            "interface": "text-input",
+            "type": "String",
+            "preview": true
+          },
+          "text_color": {
+            "interface": "color",
+            "type": "String",
+            "preview": true
+          },
+          "background_color": {
+            "interface": "color",
+            "type": "String"
+          },
+          "browse_subdued": {
+            "interface": "toggle",
+            "type": "boolean"
+          },
+          "browse_badge": {
+            "interface": "toggle",
+            "type": "boolean"
+          },
+          "soft_delete": {
+            "interface": "toggle",
+            "type": "boolean"
+          },
           "published": {
-            "name": "$t:published",
-            "text_color": "white",
-            "background_color": "green",
-            "browse_subdued": false,
-            "browse_badge": true,
-            "soft_delete": false,
-            "published": true
-          },
-          "under-review": {
-            "name": "$t:under_review",
-            "text_color": "white",
-            "background_color": "amber",
-            "browse_subdued": true,
-            "browse_badge": true,
-            "soft_delete": false,
-            "published": false
-          },
-          "draft": {
-            "name": "$t:draft",
-            "text_color": "white",
-            "background_color": "blue-grey-200",
-            "browse_subdued": true,
-            "browse_badge": true,
-            "soft_delete": false,
-            "published": false
-          },
-          "deleted": {
-            "name": "$t:deleted",
-            "text_color": "white",
-            "background_color": "red",
-            "browse_subdued": true,
-            "browse_badge": true,
-            "soft_delete": true,
-            "published": false
+            "interface": "toggle",
+            "type": "boolean"
+
           }
         }
       },
