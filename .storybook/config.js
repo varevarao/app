@@ -4,7 +4,7 @@ import Vuex from 'vuex';
 import { withA11y } from '@storybook/addon-a11y';
 
 // Registers vue components, so they can it is no problem to write stories with components who inherit others
-import './vue-components';
+import '../src/globals';
 
 import '../src/design/main.scss'
 import './storybook.scss'
