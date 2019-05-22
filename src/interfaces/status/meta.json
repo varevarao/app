@@ -20,22 +20,27 @@
       "name": "$t:status_mapping",
       "comment": "$t:status_mapping_comment",
       "interface": "status-mapping",
+      "type": "JSON",
       "options": {
         "fields": {
           "name": {
-            "width": "full",
             "interface": "text-input",
             "type": "String",
             "preview": true
           },
-          "text_color": {
-            "interface": "color",
+          "value": {
+            "interface": "text-input",
             "type": "String",
-            "preview": true
+            "index": true
+          },
+          "text_color": {
+            "interface": "color-palette",
+            "type": "String"
           },
           "background_color": {
-            "interface": "color",
-            "type": "String"
+            "interface": "color-palette",
+            "type": "String",
+            "preview": true
           },
           "browse_subdued": {
             "interface": "toggle",
@@ -59,6 +64,7 @@
       "default": {
         "published": {
           "name": "$t:published",
+          "value": "published",
           "text_color": "white",
           "background_color": "accent",
           "browse_subdued": false,
@@ -68,6 +74,7 @@
         },
         "draft": {
           "name": "$t:draft",
+          "value": "draft",
           "text_color": "white",
           "background_color": "blue-grey-200",
           "browse_subdued": true,
@@ -77,6 +84,7 @@
         },
         "deleted": {
           "name": "$t:deleted",
+          "value": "deleted",
           "text_color": "white",
           "background_color": "red",
           "browse_subdued": true,
