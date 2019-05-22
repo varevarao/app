@@ -16,7 +16,8 @@
           "title": {
             "interface": "text-input",
             "type": "string",
-            "preview": true
+            "preview": true,
+            "index": true
           },
           "key": {
             "interface": "text-input",
@@ -39,8 +40,7 @@
             "type": "boolean"
           }
         }
-      },
-      "length": 200
+      }
     }
   },
   "translation": {

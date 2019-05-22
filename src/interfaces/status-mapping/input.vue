@@ -48,14 +48,52 @@ export default {
       });
       return fields;
     },
+    indexType() {
+      var field = this.$lodash.find(this.options.fields, { index: true });
+      if (field && field.field) {
+        return field.field;
+      } else {
+        return null;
+      }
+    },
+    dataType() {
+      return this.options.dataType || "object";
+    },
     boxes: {
       get() {
-        return this.$lodash.values(this.value) || [];
+        if (this.dataType == "string") {
+          var boxes = [];
+          var fields = this.$lodash.keys(this.options.fields);
+          this.$lodash.forOwn(this.value, (value, key) => {
+            boxes.push({ [fields[0]]: value, [fields[1]]: key });
+          });
+          return boxes;
+        } else {
+          return this.$lodash.values(this.$lodash.cloneDeep(this.value)) || [];
+        }
       },
-      set(value) {
-        var obj = {};
-        for (var i = 0; i < value.length; i++) {
-          obj[i] = value[i];
+      set(values) {
+        let obj = {};
+        for (var i = 0; i < values.length; i++) {
+          var value = null;
+          if (this.dataType == "string") {
+            var fields = this.$lodash
+              .chain(this.options.fields)
+              .pickBy(b => {
+                return !b.hasOwnProperty("index") || !b.index;
+              })
+              .keys()
+              .value();
+            value = values[i][fields[0]];
+          } else {
+            value = values[i];
+          }
+
+          if (this.indexType) {
+            obj[values[i][this.indexType]] = value;
+          } else {
+            obj[i] = value;
+          }
         }
         this.$emit("input", obj);
       }
@@ -73,7 +111,9 @@ export default {
       this.boxes = this.boxes;
     },
     deleteBox(key) {
-      delete this.boxes[key];
+      this.$lodash.remove(this.boxes, (value, index) => {
+        return index == key;
+      });
       this.boxes = this.boxes;
     },
     stageValue({ id, data }) {
