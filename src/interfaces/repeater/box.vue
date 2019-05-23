@@ -7,6 +7,7 @@
           v-for="(value, key) in headers"
           :key="key"
           :interface-type="value.interface"
+          :options="fields[key].options"
           type="null"
           :name="value.field"
           :value="data[key]"

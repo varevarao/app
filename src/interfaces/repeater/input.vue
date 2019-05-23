@@ -16,7 +16,7 @@
         ></Box>
       </draggable>
     </div>
-    <v-button icon="add" @click="addBox">Add Status</v-button>
+    <v-button icon="add" @click="addBox">{{ buttonText }}</v-button>
   </div>
 </template>
 
@@ -48,6 +48,9 @@ export default {
       });
       return fields;
     },
+    buttonText() {
+      return this.options.buttonText || "Add Field";
+    },
     indexType() {
       var field = this.$lodash.find(this.options.fields, { index: true });
       if (field && field.field) {
@@ -61,7 +64,7 @@ export default {
     },
     boxes: {
       get() {
-        if (this.dataType == "string") {
+        if (this.dataType == "value") {
           var boxes = [];
           var fields = this.$lodash.keys(this.options.fields);
           this.$lodash.forOwn(this.value, (value, key) => {
@@ -76,7 +79,7 @@ export default {
         let obj = {};
         for (var i = 0; i < values.length; i++) {
           var value = null;
-          if (this.dataType == "string") {
+          if (this.dataType == "value") {
             var fields = this.$lodash
               .chain(this.options.fields)
               .pickBy(b => {
