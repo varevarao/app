@@ -47,14 +47,9 @@
       "options": {
         "fields": {
           "interface": {
-            "interface": "dropdown",
+            "interface": "interfaces",
             "type": "String",
             "preview": true,
-            "options": {
-              "choices": {
-                "text-input": "Text Input", "toggle": "Toggle", "color": "Color", "repeater": "Repeater"
-              }
-            },
             "default": "text-input"
           },
           "type": {
