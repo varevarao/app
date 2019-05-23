@@ -18,8 +18,8 @@
             "width": "full",
             "interface": "repeater",
             "type": "JSON",
-            "buttonText": "Add Button",
             "options": {
+              "buttonText": "Add Button",
               "fields": {
                 "label": {
                   "interface": "text-input",
