@@ -10,10 +10,10 @@
     "choices": {
       "name": "$t:choices",
       "comment": "$t:choices_comment",
-      "interface": "status-mapping",
+      "interface": "repeater",
       "type": "JSON",
       "options": {
-        "dataType": "string",
+        "dataType": "value",
         "fields": {
           "name": {
             "interface": "text-input",
