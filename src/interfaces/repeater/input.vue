@@ -16,7 +16,9 @@
         ></Box>
       </draggable>
     </div>
-    <v-button icon="add" @click="addBox">{{ buttonText }}</v-button>
+    <v-button v-if="!(limit > 0 && boxCount >= limit)" icon="add" @click="addBox">
+      {{ buttonText }}
+    </v-button>
   </div>
 </template>
 
@@ -50,6 +52,12 @@ export default {
     },
     buttonText() {
       return this.options.buttonText || "Add Field";
+    },
+    limit() {
+      return this.options.limit || 0;
+    },
+    boxCount() {
+      return this.boxes.length;
     },
     indexType() {
       var field = this.$lodash.find(this.options.fields, { index: true });
