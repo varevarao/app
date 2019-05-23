@@ -26,6 +26,13 @@
         ]
       }
     },
+    "limit": {
+      "name": "$t:limit",
+      "comment": "$t:limit_comment",
+      "interface": "numeric",
+      "default": 0,
+      "type": "Number"
+    },
     "buttonText": {
       "name": "$t:button_text",
       "comment": "$t:button_text_comment",
@@ -93,7 +100,13 @@
   "translation": {
     "en-US": {
       "repeater": "Repeater",
-      "fields": "Fields"
+      "fields": "Fields",
+      "data_type": "Data Type",
+      "data_type_comment": "Sets if data gets saved as an Object or only a single value of the Object",
+      "limit": "Limit",
+      "limit_comment": "Limits the amount of items",
+      "button_text": "Button Text",
+      "button_text_comment": "Sets the text displayed in the add button"
     }
   }
 }
