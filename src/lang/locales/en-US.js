@@ -36,6 +36,7 @@ export default {
   almost_done_options: "Almost Done! Now just review the interface options below.",
   api_installed: "API Successfully Installed",
   api_url: "API URL",
+  asc: "asc",
   auto_generate: "Auto-Generate",
   auto_generated: "Automatically generated...",
   batch: "Batch",
@@ -152,6 +153,7 @@ export default {
     'Are you sure you want to delete the field "{field}"? This action can not be undone.',
   delete_role_are_you_sure:
     'Are you sure to delete the role "{name}"? This action cannot be undone.',
+  desc: "desc",
   description: "Description",
   dialog_beginning: "Beginning of dialog window.",
   discard_changes: "Discard Changes",

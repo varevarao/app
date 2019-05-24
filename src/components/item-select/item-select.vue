@@ -10,16 +10,40 @@
       }"
       @done="$emit('close')"
     >
-      <div class="search-sort"></div>
+      <div class="search-sort">
+        <input
+          :placeholder="$t('search')"
+          :value="searchQuery"
+          type="search"
+          @input="setSearchQuery"
+        />
+
+        <div class="select">
+          <select v-model="sortField">
+            <option v-for="field in fields" :key="field" :value="field">
+              {{ $helpers.formatTitle(field) }}
+            </option>
+          </select>
+          <v-icon name="arrow_drop_down" color="light-gray" />
+        </div>
+
+        <div class="select">
+          <select v-model="sortDirection">
+            <option value="asc">{{ $t("asc") }}</option>
+            <option value="desc">{{ $t("desc") }}</option>
+          </select>
+          <v-icon name="arrow_drop_down" color="light-gray" />
+        </div>
+      </div>
 
       <div v-if="loading" class="spinner">
         <v-spinner />
       </div>
 
-      <div v-else class="items">
+      <div class="items">
         <div class="head">
-          <span />
           <!-- Checkboxes -->
+          <span />
           <span v-for="field in fields" :key="field">{{ $helpers.formatTitle(field) }}</span>
         </div>
         <label v-for="item in items" :key="uid + '_' + item[primaryKeyField]">
@@ -117,7 +141,11 @@ export default {
       loading: false,
 
       // Populated if something went wrong during the fetching of the items
-      error: false
+      error: false,
+
+      searchQuery: "",
+      sortField: null,
+      sortDirection: "asc"
     };
   },
   computed: {
@@ -143,7 +171,7 @@ export default {
     }
   },
 
-  // Re-fetch the items whenever the collection or filters prop changes
+  // Re-fetch the items whenever the collection / filters prop changes
   watch: {
     collection() {
       this.fetchItems();
@@ -153,12 +181,22 @@ export default {
       handler() {
         this.fetchItems;
       }
+    },
+    sortField() {
+      this.fetchItems();
+    },
+    sortDirection() {
+      this.fetchItems();
     }
   },
 
   // Fetch the items on first load of the interface
   created() {
+    this.sortField = this.fields[0];
+
     this.fetchItems();
+
+    this.setSearchQuery = _.debounce(this.setSearchQuery, 200);
   },
 
   methods: {
@@ -169,6 +207,10 @@ export default {
 
       const params = {};
 
+      if (this.searchQuery.length > 0) {
+        params.q = this.searchQuery;
+      }
+
       if (this.filters.length > 0) {
         params.filters = formatFilters(this.filters);
       }
@@ -176,6 +218,12 @@ export default {
       if (this.fields.length > 0) {
         params.fields = _.clone(this.fields);
       }
+
+      let sortString = "";
+      if (this.sortDirection === "desc") sortString += "-";
+      sortString += this.sortField;
+
+      params.sort = sortString;
 
       // No matter what, always fetch the primary key as that's used for the selection
       params.fields.push(this.primaryKeyField);
@@ -188,6 +236,7 @@ export default {
         .finally(() => (this.loading = false));
     },
 
+    // Stage the value to the parent component
     updateValue(event) {
       if (this.single) {
         return this.$emit("input", event.target.value);
@@ -200,6 +249,12 @@ export default {
         // non-strict comparison. It might happen that the numeric id 1 is returned as '1' by the api
         return this.value == primaryKey;
       }
+    },
+
+    // Set the search query
+    setSearchQuery(event) {
+      this.searchQuery = event.target.value;
+      this.fetchItems();
     }
   }
 };
@@ -219,13 +274,19 @@ export default {
 .items .head {
   display: table-row;
 }
+.head {
+  position: sticky;
+  display: block;
+  top: 0px;
+}
 .items label > *,
 .items .head > * {
   display: table-cell;
-  padding: 8px 32px 8px 0;
   border-bottom: 1px solid var(--lightest-gray);
+  padding: 8px 32px 8px 0;
 }
-.input input {
+.input input,
+.search-sort input[type="checkbox"] {
   position: absolute;
   left: -9999px;
   opacity: 0;
@@ -237,5 +298,44 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+}
+.search-sort {
+  display: flex;
+  border-bottom: 1px solid var(--lightest-gray);
+  padding: 8px 0;
+  padding-right: 32px;
+  align-items: center;
+}
+.search-sort input[type="search"] {
+  flex-grow: 1;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0;
+  padding: 8px 32px;
+}
+.search-sort .select {
+  position: relative;
+}
+.search-sort select {
+  appearance: none;
+  background-color: transparent;
+  margin-left: 16px;
+  border: 1px solid var(--lightest-gray);
+  padding: 4px 8px;
+  padding-right: 20px;
+  cursor: pointer;
+}
+.search-sort select:hover {
+  border-color: var(--dark-gray);
+}
+.search-sort .select i {
+  position: absolute;
+  right: 0px;
+  top: 2px;
+  pointer-events: none;
 }
 </style>
