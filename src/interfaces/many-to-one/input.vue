@@ -34,6 +34,7 @@
         :fields="fieldsToBeRendered"
         :filters="filters"
         :selection="selection"
+        single
         @select="emitValue"
       />
 

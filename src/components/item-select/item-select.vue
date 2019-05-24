@@ -61,6 +61,15 @@ export default {
     selection: {
       type: [Array, String, Number],
       default: null
+    },
+
+    /**
+     * Use single mode. This will use radio buttons instead of checkboxes so the user can only select
+     * a single item
+     */
+    single: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
