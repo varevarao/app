@@ -9,6 +9,7 @@
         }
       }"
       @done="$emit('close')"
+      @close="$emit('close')"
     >
       <div class="search-sort">
         <input
