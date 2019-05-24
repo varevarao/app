@@ -28,7 +28,16 @@
         class="spinner"
       ></v-spinner>
 
-      <portal v-if="showListing" to="modal">
+      <v-item-select
+        v-if="showListing"
+        :collection="relation.collection_one.collection"
+        :fields="fieldsToBeRendered"
+        :filters="filters"
+        :selection="selection"
+        @select="emitValue"
+      />
+
+      <!-- <portal v-if="showListing" to="modal">
         <v-modal
           :title="$t('select_existing')"
           :buttons="{
@@ -64,13 +73,14 @@
             @select="emitValue"
           ></v-items>
         </v-modal>
-      </portal>
+      </portal> -->
     </template>
   </div>
 </template>
 
 <script>
 import mixin from "@directus/extension-toolkit/mixins/interface";
+import getFieldsFromTemplateString from "@/helpers/get-fields-from-template-string";
 
 export default {
   name: "InterfaceManyToOne",
@@ -106,6 +116,9 @@ export default {
       if (_.isObject(this.value)) return this.value[this.relatedPrimaryKeyField];
 
       return this.value;
+    },
+    fieldsToBeRendered() {
+      return getFieldsFromTemplateString(this.options.template);
     },
     render() {
       return this.$helpers.micromustache.compile(this.options.template);
