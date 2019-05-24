@@ -3,28 +3,57 @@
     <v-modal
       :title="$t('select_existing')"
       :buttons="{
-        save: {
+        done: {
           text: $t('done'),
           color: 'accent'
         }
       }"
+      @done="$emit('close')"
     >
       <div class="search-sort"></div>
-      <div class="items">
-        <label v-for="item in items" :key="uid + '_' + item[primaryKeyField]">
-          <input type="checkbox" :name="uid" :value="item[primaryKeyField]" />
 
-          <v-ext-display
-            v-for="fieldInfo in fieldsWithInfo"
-            :id="uid + '_' + fieldInfo.field"
-            :key="uid + '_' + fieldInfo.field"
-            :interface-type="fieldInfo.interface"
-            :name="uid + '_' + fieldInfo.field"
-            :type="fieldInfo.type"
-            :datatype="fieldInfo.datatype"
-            :options="fieldInfo.options"
-            :value="item[fieldInfo.field]"
-          />
+      <div v-if="loading" class="spinner">
+        <v-spinner />
+      </div>
+
+      <div v-else class="items">
+        <div class="head">
+          <span />
+          <!-- Checkboxes -->
+          <span v-for="field in fields" :key="field">{{ $helpers.formatTitle(field) }}</span>
+        </div>
+        <label v-for="item in items" :key="uid + '_' + item[primaryKeyField]">
+          <div class="input">
+            <input
+              :type="single ? 'radio' : 'checkbox'"
+              :name="uid"
+              :value="item[primaryKeyField]"
+              :checked="isChecked(item[primaryKeyField])"
+              @change="updateValue"
+            />
+            <v-icon
+              v-if="single"
+              :name="
+                isChecked(item[primaryKeyField]) ? 'radio_button_checked' : 'radio_button_unchecked'
+              "
+            />
+            <v-icon
+              v-else
+              :name="isChecked(item[primaryKeyField]) ? 'check_box' : 'check_box_outline'"
+            />
+          </div>
+
+          <span v-for="fieldInfo in fieldsWithInfo" :key="uid + '_' + fieldInfo.field">
+            <v-ext-display
+              :id="uid + '_' + fieldInfo.field"
+              :interface-type="fieldInfo.interface"
+              :name="uid + '_' + fieldInfo.field"
+              :type="fieldInfo.type"
+              :datatype="fieldInfo.datatype"
+              :options="fieldInfo.options"
+              :value="item[fieldInfo.field]"
+            />
+          </span>
         </label>
       </div>
     </v-modal>
@@ -67,7 +96,7 @@ export default {
 
     // The current selection. In case of the single-selection mode this is a primary key, otherwise
     // it's an array of primary keys
-    selection: {
+    value: {
       type: [Array, String, Number],
       default: null
     },
@@ -157,6 +186,20 @@ export default {
         .then(items => (this.items = items))
         .catch(error => (this.error = error))
         .finally(() => (this.loading = false));
+    },
+
+    updateValue(event) {
+      if (this.single) {
+        return this.$emit("input", event.target.value);
+      }
+    },
+
+    // Check if the provided primaryKey is included in the selection
+    isChecked(primaryKey) {
+      if (this.single) {
+        // non-strict comparison. It might happen that the numeric id 1 is returned as '1' by the api
+        return this.value == primaryKey;
+      }
     }
   }
 };
@@ -165,12 +208,34 @@ export default {
 <style scoped>
 .items {
   display: table;
+  min-width: 100%;
+  padding: 0 32px;
 }
-.items label {
+.items label:hover {
+  background-color: var(--highlight);
+  cursor: pointer;
+}
+.items label,
+.items .head {
   display: table-row;
 }
-.items label > * {
+.items label > *,
+.items .head > * {
   display: table-cell;
-  padding: 8px;
+  padding: 8px 32px 8px 0;
+  border-bottom: 1px solid var(--lightest-gray);
+}
+.input input {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  visibility: hidden;
+}
+.spinner {
+  width: 100%;
+  padding: 80px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

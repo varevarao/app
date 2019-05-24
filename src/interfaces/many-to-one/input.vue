@@ -31,57 +31,19 @@
       <v-item-select
         v-if="showListing"
         :collection="relation.collection_one.collection"
-        :fields="fieldsToBeRendered"
-        :filters="filters"
-        :selection="selection"
+        :fields="relatedFields"
+        :filters="[]"
         single
-        @select="emitValue"
+        :value="valuePK"
+        @input="emitValue"
+        @close="closeListing"
       />
-
-      <!-- <portal v-if="showListing" to="modal">
-        <v-modal
-          :title="$t('select_existing')"
-          :buttons="{
-            save: {
-              text: 'Save',
-              color: 'accent',
-              loading: selectionSaving,
-              disabled: newSelected === null
-            }
-          }"
-          action-required
-          @close="dismissModal"
-          @save="populateDropdown"
-        >
-          <div class="search">
-            <v-input
-              type="search"
-              :placeholder="$t('search')"
-              class="search-input"
-              @input="onSearchInput"
-            />
-          </div>
-          <v-items
-            class="items"
-            :collection="relation.collection_one.collection"
-            :selection="selection"
-            :filters="filters"
-            :view-query="viewQuery"
-            :view-type="viewType"
-            :view-options="viewOptions"
-            @options="setViewOptions"
-            @query="setViewQuery"
-            @select="emitValue"
-          ></v-items>
-        </v-modal>
-      </portal> -->
     </template>
   </div>
 </template>
 
 <script>
 import mixin from "@directus/extension-toolkit/mixins/interface";
-import getFieldsFromTemplateString from "@/helpers/get-fields-from-template-string";
 
 export default {
   name: "InterfaceManyToOne",
@@ -95,12 +57,7 @@ export default {
 
       showListing: false,
       selectionSaving: false,
-      newSelected: null,
-
-      viewOptionsOverride: {},
-      viewTypeOverride: null,
-      viewQueryOverride: {},
-      filtersOverride: []
+      newSelected: null
     };
   },
   computed: {
@@ -118,24 +75,11 @@ export default {
 
       return this.value;
     },
-    fieldsToBeRendered() {
-      return getFieldsFromTemplateString(this.options.template);
+    relatedFields() {
+      return this.options.visible_fields.split(",").map(f => f.trim());
     },
     render() {
       return this.$helpers.micromustache.compile(this.options.template);
-    },
-    selection() {
-      if (!this.value) return [];
-
-      if (this.newSelected) {
-        return [this.newSelected];
-      }
-
-      if (this.valuePK) {
-        return [{ [this.relatedPrimaryKeyField]: this.valuePK }];
-      }
-
-      return [];
     },
     selectOptions() {
       if (this.items.length === 0) return {};
@@ -143,37 +87,6 @@ export default {
       return _.mapValues(_.keyBy(this.items, this.relatedPrimaryKeyField), item =>
         this.render(item)
       );
-    },
-    preferences() {
-      return typeof this.options.preferences === "string"
-        ? JSON.parse(this.options.preferences)
-        : this.options.preferences;
-    },
-    filters() {
-      if (this.relationSetup === false) return null;
-      return [...((this.preferences && this.preferences.filters) || []), ...this.filtersOverride];
-    },
-    viewOptions() {
-      if (this.relationSetup === false) return null;
-
-      const viewOptions = (this.preferences && this.preferences.viewOptions) || {};
-      return {
-        ...viewOptions,
-        ...this.viewOptionsOverride
-      };
-    },
-    viewType() {
-      if (this.relationSetup === false) return null;
-      if (this.viewTypeOverride) return this.viewTypeOverride;
-      return (this.preferences && this.preferences.viewType) || "tabular";
-    },
-    viewQuery() {
-      if (this.relationSetup === false) return null;
-      const viewQuery = (this.preferences && this.preferences.viewQuery) || {};
-      return {
-        ...viewQuery,
-        ...this.viewQueryOverride
-      };
     }
   },
   watch: {
@@ -191,16 +104,8 @@ export default {
     this.onSearchInput = _.debounce(this.onSearchInput, 200);
   },
   methods: {
-    emitValue(selection) {
-      if (selection.length === 1) {
-        this.newSelected = selection[0];
-      } else if (selection.length === 0) {
-        this.newSelected = null;
-      } else {
-        this.newSelected = selection[selection.length - 1];
-      }
-
-      this.$emit("input", this.newSelected);
+    emitValue(primaryKey) {
+      this.$emit("input", primaryKey);
     },
     fetchItems() {
       if (this.relation == null) return;
@@ -235,42 +140,6 @@ export default {
           this.loading = false;
         });
     },
-    populateDropdown() {
-      let exists = false;
-      this.selectionSaving = true;
-
-      this.items.forEach(item => {
-        if (item[this.relatedPrimaryKeyField] === this.newSelected[this.relatedPrimaryKeyField]) {
-          exists = true;
-        }
-      });
-
-      if (exists === false) {
-        this.$api
-          .getItem(
-            this.relation.collection_one.collection,
-            this.newSelected[this.relatedPrimaryKeyField]
-          )
-          .then(res => res.data)
-          .then(item => {
-            this.$emit("input", this.newSelected);
-            this.items = [...this.items, item];
-            this.selectionSaving = false;
-            this.showListing = false;
-          })
-          .catch(error => {
-            console.error(error); // eslint-disable-line
-            this.$events.emit("error", {
-              notify: this.$t("something_went_wrong_body"),
-              error
-            });
-          });
-      } else {
-        this.$emit("input", this.newSelected);
-        this.selectionSaving = false;
-        this.showListing = false;
-      }
-    },
     dismissModal() {
       this.showListing = false;
       this.selectionSaving = false;
@@ -292,6 +161,10 @@ export default {
       this.setViewQuery({
         q: value
       });
+    },
+    closeListing() {
+      this.fetchItems();
+      this.showListing = false;
     }
   }
 };

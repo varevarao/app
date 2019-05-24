@@ -13,6 +13,14 @@
         "placeholder": "$t:template_placeholder"
       }
     },
+    "visible_fields": {
+      "name": "$t:visible_fields",
+      "comment": "$t:visible_fields_note",
+      "interface": "text-input",
+      "options": {
+        "placeholder": "$t:visible_fields_placeholder"
+      }
+    },
     "placeholder": {
       "name": "$t:placeholder",
       "comment": "$t:placeholder_comment",
@@ -25,27 +33,6 @@
       "comment": "$t:threshold_comment",
       "interface": "numeric",
       "default": 20
-    },
-    "preferences": {
-      "name": "$t:preferences",
-      "comment": "$t:preferences_comment",
-      "interface": "json",
-      "options": {
-        "language": "application/json",
-        "template": {
-          "viewType": "tabular",
-          "viewQuery": {
-            "fields": ["id", "name"]
-          },
-          "filters": [
-            {
-              "field": "name",
-              "operator": "contains",
-              "value": "hi"
-            }
-          ]
-        }
-      }
     },
     "icon": {
       "name": "$t:icon",
