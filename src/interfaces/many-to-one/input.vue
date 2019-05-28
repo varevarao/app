@@ -44,6 +44,7 @@
 
 <script>
 import mixin from "@directus/extension-toolkit/mixins/interface";
+import getFieldsFromTemplate from "@/helpers/get-fields-from-template";
 
 export default {
   name: "InterfaceManyToOne",
@@ -76,7 +77,14 @@ export default {
       return this.value;
     },
     relatedFields() {
-      return this.options.visible_fields.split(",").map(f => f.trim());
+      let visibleFields = this.options.visible_fields;
+
+      // If the visible fields option hasn't been filled out, use the display template string instead
+      if (!visibleFields || visibleFields.length === 0) {
+        return getFieldsFromTemplate(this.options.template);
+      }
+
+      return visibleFields.split(",").map(f => f.trim());
     },
     render() {
       return this.$helpers.micromustache.compile(this.options.template);
