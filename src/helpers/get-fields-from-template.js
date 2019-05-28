@@ -4,10 +4,10 @@
  * @return {Array}         Field names
  * @example
  *
- * getFieldsFromTemplateString("{{ title }} — {{ runtime }}");
+ * getFieldsFromTemplate("{{ title }} — {{ runtime }}");
  * // -> ["title", "runtime"]
  */
-export default function getFieldsFromTemplateString(string) {
+export default function getFieldsFromTemplate(string) {
   const regex = /(?<={{)(.*?)(?=}})/g;
   let fields = string.match(regex);
   fields = fields.map(field => field.trim());
