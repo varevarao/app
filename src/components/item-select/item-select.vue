@@ -37,16 +37,21 @@
         </div>
       </div>
 
-      <div v-if="loading" class="spinner">
+      <div v-if="hydrating" class="spinner">
         <v-spinner />
       </div>
 
-      <div class="items">
+      <div v-if="items.length === 0 && !hydrating && !loading" class="not-found">
+        {{ $t("no_results") }}
+      </div>
+
+      <div v-if="!hydrating && items.length > 0" class="items">
         <div class="head">
           <!-- Checkboxes -->
           <span />
           <span v-for="field in fields" :key="field">{{ $helpers.formatTitle(field) }}</span>
         </div>
+
         <label v-for="item in items" :key="uid + '_' + item[primaryKeyField]">
           <div class="input">
             <input
@@ -81,6 +86,15 @@
           </span>
         </label>
       </div>
+
+      <v-button
+        v-if="moreItemsAvailable && !hydrating"
+        class="more"
+        :loading="loading"
+        @click="loadMore"
+      >
+        {{ $t("load_more") }}
+      </v-button>
     </v-modal>
   </portal>
 </template>
@@ -138,7 +152,10 @@ export default {
       // The raw items fetched from the collection based on the filtes and fields that are requested
       items: [],
 
-      // If the items are currently being loaded in
+      // Total number of items in this collection
+      totalCount: 0,
+
+      // If the items are currently being loaded (fresh)
       loading: false,
 
       // Populated if something went wrong during the fetching of the items
@@ -146,7 +163,14 @@ export default {
 
       searchQuery: "",
       sortField: null,
-      sortDirection: "asc"
+      sortDirection: "asc",
+
+      // First load in progress
+      hydrating: true,
+
+      // If the length of the last result is less than the limit, we know that there aren't any more
+      // items to load.
+      moreItemsAvailable: false
     };
   },
   computed: {
@@ -179,8 +203,8 @@ export default {
     },
     filters: {
       deep: true,
-      handler() {
-        this.fetchItems;
+      handler(before, after) {
+        if (!_.isEqual(before, after)) this.fetchItems();
       }
     },
     sortField() {
@@ -198,15 +222,37 @@ export default {
     this.fetchItems();
 
     this.setSearchQuery = _.debounce(this.setSearchQuery, 200);
+
+    // Fetch the total number of items in this collection, so we can accurately render the load more
+    // button
+    this.$api
+      .getItems(this.collection, {
+        meta: "total_count",
+        limit: 1
+      })
+      .then(res => res.meta)
+      .then(meta => (this.totalCount = meta.total_count))
+      .catch(error => (this.error = error));
   },
 
   methods: {
     // Fetch the items based on the passed collection, filters, and fields prop
-    fetchItems() {
+    fetchItems(options = {}) {
+      const defaultOptions = {
+        replace: true,
+        offset: 0
+      };
+
+      options = _.merge(defaultOptions, options);
+
       this.loading = true;
       this.error = null;
 
-      const params = {};
+      const params = {
+        limit: 200,
+        offset: options.offset,
+        meta: "*"
+      };
 
       if (this.searchQuery.length > 0) {
         params.q = this.searchQuery;
@@ -232,9 +278,17 @@ export default {
       this.$api
         .getItems(this.collection, params)
         .then(res => res.data)
-        .then(items => (this.items = items))
+        .then(items => {
+          this.moreItemsAvailable = items.length === 200;
+
+          if (options.replace) return (this.items = items);
+          return (this.items = [...this.items, ...items]);
+        })
         .catch(error => (this.error = error))
-        .finally(() => (this.loading = false));
+        .finally(() => {
+          this.loading = false;
+          this.hydrating = false;
+        });
     },
 
     // Stage the value to the parent component
@@ -256,6 +310,15 @@ export default {
     setSearchQuery(event) {
       this.searchQuery = event.target.value;
       this.fetchItems();
+    },
+
+    // Request more items from the server and append to the end of the list
+    loadMore() {
+      const offset = this.items.length;
+      this.fetchItems({
+        offset: offset,
+        replace: false
+      });
     }
   }
 };
@@ -266,7 +329,7 @@ export default {
   display: table;
   min-width: 100%;
   padding: 0 32px;
-  margin-bottom: 128px;
+  margin-bottom: 32px;
 }
 .items label:hover {
   background-color: var(--highlight);
@@ -300,10 +363,6 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
 }
 .search-sort {
   display: flex;
@@ -339,5 +398,11 @@ export default {
   right: 0px;
   top: 2px;
   pointer-events: none;
+}
+.more {
+  margin: 32px auto;
+}
+.not-found {
+  padding: 32px;
 }
 </style>
