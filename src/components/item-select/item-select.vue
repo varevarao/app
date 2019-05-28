@@ -266,6 +266,7 @@ export default {
   display: table;
   min-width: 100%;
   padding: 0 32px;
+  margin-bottom: 128px;
 }
 .items label:hover {
   background-color: var(--highlight);
