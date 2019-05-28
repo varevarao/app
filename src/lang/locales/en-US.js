@@ -282,6 +282,7 @@ export default {
   less_than_equal: "Less than or equal to",
   limited: "Limited",
   loading: "Loading...",
+  load_more: "Load more",
   loading_more: "Loading more items...",
   login: "Log in",
   m2m: "Many-to-Many (M2M)",
