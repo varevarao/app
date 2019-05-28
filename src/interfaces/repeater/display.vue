@@ -1,15 +1,11 @@
 <template>
-  <v-popover trigger="hover" v-if="valueFields && valueFields.length > 0">
-    <div>{{ itemCount }}</div>
-
-    <template slot="popover">
-      <ul class="list">
-        <li v-for="(val, i) in value" :key="i">{{ val[valueFields[0]] }}</li>
-      </ul>
-    </template>
-  </v-popover>
-
-  <div v-else class="item-count">{{ itemCount }}</div>
+  <v-contextual-menu
+    trigger="hover"
+    :text="itemCount"
+    :options="menuOptions"
+    :icon="null"
+    placement="right-end"
+  />
 </template>
 
 <script>
@@ -28,27 +24,25 @@ export default {
         .value();
     },
     itemCount() {
-      return this.$lodash.keys(this.value).length + " Items";
+      return this.$tc("item_count", (this.value || []).length, {
+        count: (this.value || []).length
+      });
+    },
+    menuOptions() {
+      var options = [];
+      _.forEach(this.value, value => {
+        options.push({
+          text: value[this.valueFields[0]]
+        });
+      });
+      return options;
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.list {
-  max-height: 200px;
-  overflow-y: auto;
-
-  list-style: none;
-  padding: 0;
-
-  li {
-    color: var(--dark-gray);
-    padding: 8px 0;
-
-    &:not(:last-of-type) {
-      border-bottom: 1px solid var(--lightest-gray);
-    }
-  }
+.v-ext-display {
+  display: flex;
 }
 </style>
