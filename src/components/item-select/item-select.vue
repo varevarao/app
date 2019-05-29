@@ -59,7 +59,7 @@
               :name="uid"
               :value="item[primaryKeyField]"
               :checked="isChecked(item[primaryKeyField])"
-              @change="updateValue"
+              @change="updateValue(item[primaryKeyField])"
             />
             <v-icon
               v-if="single"
@@ -69,7 +69,7 @@
             />
             <v-icon
               v-else
-              :name="isChecked(item[primaryKeyField]) ? 'check_box' : 'check_box_outline'"
+              :name="isChecked(item[primaryKeyField]) ? 'check_box' : 'check_box_outline_blank'"
             />
           </div>
 
@@ -292,9 +292,15 @@ export default {
     },
 
     // Stage the value to the parent component
-    updateValue(event) {
+    updateValue(primaryKey) {
       if (this.single) {
-        return this.$emit("input", event.target.value);
+        return this.$emit("input", primaryKey);
+      }
+
+      if (this.value.includes(primaryKey)) {
+        this.$emit("input", this.value.filter(pk => pk !== primaryKey));
+      } else {
+        this.$emit("input", [...this.value, primaryKey]);
       }
     },
 
@@ -304,6 +310,8 @@ export default {
         // non-strict comparison. It might happen that the numeric id 1 is returned as '1' by the api
         return this.value == primaryKey;
       }
+
+      return this.value.includes(primaryKey);
     },
 
     // Set the search query

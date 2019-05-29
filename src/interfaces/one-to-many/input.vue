@@ -39,7 +39,7 @@
           @end="dragging = false"
         >
           <div
-            v-for="item in itemsWithoutDeleted"
+            v-for="item in items"
             :key="item[relatedKey]"
             class="row"
             @click="editExisting = item"
@@ -86,66 +86,15 @@
       </div>
     </template>
 
-    <portal v-if="selectExisting" to="modal">
-      <v-modal
-        :title="$t('select_existing')"
-        :buttons="{
-          save: {
-            text: 'Save',
-            color: 'accent',
-            loading: selectionSaving
-          }
-        }"
-        action-required
-        @close="dismissSelection"
-        @save="saveSelection"
-      >
-        <div class="search">
-          <v-input
-            type="search"
-            :placeholder="$t('search')"
-            class="search-input"
-            @input="onSearchInput"
-          />
-        </div>
-        <v-items
-          class="items"
-          :collection="relatedCollection"
-          :filters="filters"
-          :view-query="viewQuery"
-          :view-type="viewType"
-          :view-options="viewOptions"
-          :selection="selection"
-          @options="setViewOptions"
-          @query="setViewQuery"
-          @select="selection = $event"
-        ></v-items>
-      </v-modal>
-    </portal>
-
-    <portal v-if="editExisting" to="modal">
-      <v-modal
-        :title="$t('editing_item')"
-        :buttons="{
-          save: {
-            text: 'Save',
-            color: 'accent',
-            loading: selectionSaving
-          }
-        }"
-        @close="editExisting = false"
-        @save="saveEdits"
-      >
-        <div class="edit-modal-body">
-          <v-form
-            :fields="relatedCollectionFields"
-            :collection="collection"
-            :values="editExisting"
-            @stage-value="stageValue"
-          ></v-form>
-        </div>
-      </v-modal>
-    </portal>
+    <v-item-select
+      v-if="selectExisting"
+      :collection="relation.collection_many.collection"
+      :fields="visibleFields"
+      :filters="[]"
+      :value="selectionPrimaryKeys"
+      @input="stageSelection"
+      @close="closeSelection"
+    />
 
     <portal v-if="addNew" to="modal">
       <v-modal
@@ -188,53 +137,59 @@ export default {
       },
 
       selectExisting: false,
-      selectionSaving: false,
-      selection: [],
 
       editExisting: null,
       addNew: null,
       edits: {},
 
-      viewOptionsOverride: {},
-      viewTypeOverride: null,
-      viewQueryOverride: {},
-      filtersOverride: [],
+      dragging: false,
 
-      dragging: false
+      // Items to be rendered in the table preview
+      items: [],
+      loading: false,
+      error: null
     };
   },
   computed: {
+    // The field on the related collection that has the type of sort
     relatedSortField() {
       return _.find(this.relatedCollectionFields, { type: "sort" });
     },
+
+    // Check if the items are sortable by checking for the prescense of a sort field
     sortable() {
       return !!this.relatedSortField;
     },
+
+    // If the user currently sorted by the manual sort option
     manualSortActive() {
-      return this.sort.field === this.relatedSortField.field;
+      return this.sort.field === this.relatedSortField && this.relatedSortField.field;
     },
+
+    // If the relationship has been configured
     relationSetup() {
       if (!this.relation) return false;
       return true;
     },
-    currentCollection() {
-      return this.relation.collection_one.collection;
-    },
-    relatedCollection() {
-      return this.relation.collection_many.collection;
-    },
+
+    // Fields in the related collection
     relatedCollectionFields() {
       return this.relation.collection_many.fields;
     },
+
+    // Primary key fieldname of the related collection
     relatedKey() {
       return _.find(this.relation.collection_many.fields, {
         primary_key: true
       }).field;
     },
+
+    // Name of the field that holds the primary key of the current collection
     relatedField() {
       return this.relation.field_many.field;
     },
 
+    // The fields that should be rendered in the modal / table
     visibleFields() {
       if (this.relationSetup === false) return [];
       if (!this.options.fields) return [];
@@ -245,6 +200,8 @@ export default {
 
       return this.options.fields.split(",").map(val => val.trim());
     },
+
+    // Column headers for the inline table preview
     columns() {
       if (this.relationSetup === false) return null;
       return this.visibleFields.map(field => ({
@@ -253,12 +210,16 @@ export default {
         fieldInfo: this.relatedCollectionFields[field]
       }));
     },
+
+    // Default values of the related collection, used when creating an new item
     relatedDefaultValues() {
       if (this.relationSetup === false) return null;
       if (!this.relatedCollectionFields) return null;
 
       return _.mapValues(this.relatedCollectionFields, field => field.default_value);
     },
+
+    // The current state of the new item. Combines default values with the edits made
     relatedDefaultsWithEdits() {
       if (this.relationSetup === false) return null;
       if (!this.relatedDefaultValues) return null;
@@ -269,78 +230,49 @@ export default {
       };
     },
 
-    filters() {
-      if (this.relationSetup === false) return null;
-      return [
-        ...((this.options.preferences && this.options.preferences.filters) || []),
-        ...this.filtersOverride
-      ];
-    },
-    viewOptions() {
-      if (this.relationSetup === false) return null;
-      const viewOptions = (this.options.preferences && this.options.preferences.viewOptions) || {};
-      return {
-        ...viewOptions,
-        ...this.viewOptionsOverride
-      };
-    },
-    viewType() {
-      if (this.relationSetup === false) return null;
-      if (this.viewTypeOverride) return this.viewTypeOverride;
-      return (this.options.preferences && this.options.preferences.viewType) || "tabular";
-    },
-    viewQuery() {
-      if (this.relationSetup === false) return null;
-      const viewQuery = (this.options.preferences && this.options.preferences.viewQuery) || {};
-      return {
-        ...viewQuery,
-        ...this.viewQueryOverride
-      };
-    },
-
-    items: {
-      get() {
-        if (this.relationSetup === false) return [];
-
-        return _.orderBy(
-          this.value || [],
-          item => item[this.sort.field],
-          this.sort.asc ? "asc" : "desc"
-        );
-      },
-      // The setter is used when <draggable> updates the sort order during manual sorting
-      set(newValue) {
-        let value = _.clone(newValue);
-
-        value = value.map((item, index) => {
-          const clone = _.clone(item);
-
-          if (typeof clone === "object" && clone.hasOwnProperty(this.relatedField)) {
-            delete clone[this.relatedField];
-          }
-
-          clone[this.relatedSortField.field] = index + 1;
-
-          return clone;
-        });
-
-        this.$emit("input", value);
-      }
-    },
-
-    itemsWithoutDeleted() {
-      return this.items.filter(item => item.$delete !== true);
+    // The current value in just primary keys. Can be passed to the item select modal
+    selectionPrimaryKeys() {
+      return (this.value || [])
+        .filter(item => item.$delete !== true)
+        .map(item => item[this.relatedKey])
+        .filter(key => key); // Filter out empty items
     }
+
+    //   items: {
+    //     get() {
+    //       if (this.relationSetup === false) return [];
+
+    //       return _.orderBy(
+    //         this.value || [],
+    //         item => item[this.sort.field],
+    //         this.sort.asc ? "asc" : "desc"
+    //       );
+    //     },
+    //     // The setter is used when <draggable> updates the sort order during manual sorting
+    //     set(newValue) {
+    //       let value = _.clone(newValue);
+
+    //       value = value.map((item, index) => {
+    //         const primaryKey = item[this.relatedKey];
+
+    //         return {
+    //           [this.relatedKey]: primaryKey,
+    //           [this.relatedSortField.field]: index + 1
+    //         };
+    //       });
+
+    //       this.$emit("input", value);
+    //     }
+    //   }
   },
   watch: {
-    value() {
-      this.setSelection();
-    },
     relation() {
       if (this.relationSetup) {
         this.sort.field = this.visibleFields && this.visibleFields[0];
-        this.setSelection();
       }
+    },
+    value() {
+      this.fetchItems();
     }
   },
   created() {
@@ -350,10 +282,11 @@ export default {
       } else {
         this.sort.field = this.visibleFields && this.visibleFields[0];
       }
-      this.setSelection();
     }
 
     this.onSearchInput = _.debounce(this.onSearchInput, 200);
+
+    this.items = this.value;
   },
   methods: {
     setViewOptions(updates) {
@@ -368,10 +301,6 @@ export default {
         ...updates
       };
     },
-    setSelection() {
-      if (!this.value) return;
-      this.selection = this.value.filter(val => !val.$delete);
-    },
     changeSort(field) {
       if (this.sort.field === field) {
         this.sort.asc = !this.sort.asc;
@@ -382,68 +311,48 @@ export default {
       this.sort.field = field;
       return;
     },
-    saveSelection() {
-      this.selectionSaving = true;
 
-      const savedRelatedPKs = (this.value || [])
-        .filter(val => !val.$delete)
-        .map(val => val[this.relatedKey]);
+    // The item select will give an array of primary keys. This method will:
+    // * convert the array of primary keys to an array of objects { [pk]: pk }
+    // * add the `$delete` flag to any item that's not selected anymore
+    stageSelection(primaryKeys) {
+      const currentSelection = _.clone(this.value || []);
 
-      const selectedPKs = this.selection.map(item => item[this.relatedKey]);
+      let newSelection = currentSelection.map(item => {
+        const primaryKey = item[this.relatedKey];
 
-      // Set $delete: true to all items that aren't selected anymore
-      let newValue = (this.value || []).map(item => {
-        const relatedPK = item[this.relatedKey];
-
-        if (!relatedPK) return item;
-
-        // If item was saved before, add $delete flag
-        if (selectedPKs.includes(relatedPK) === false) {
+        if (primaryKeys.includes(primaryKey)) {
           return {
-            [this.relatedKey]: item[this.relatedKey],
-            $delete: true
+            [this.relatedKey]: primaryKey
           };
         }
 
-        // If $delete flag is set and the item is re-selected, remove $delete flag
-        if (item.$delete && selectedPKs.includes(relatedPK)) {
-          const clone = { ...item };
-          delete clone.$delete;
-          return clone;
-        }
-
-        return item;
+        return {
+          [this.relatedKey]: primaryKey,
+          $delete: true
+        };
       });
 
-      selectedPKs.forEach((selectedPK, i) => {
-        if (savedRelatedPKs.includes(selectedPK) === false) {
-          const item = { ...this.selection[i] };
-          delete item[this.relation.field_many.field];
-          newValue.push(item);
-        }
-      });
+      const newlySelectedPrimaryKeys = _.difference(
+        primaryKeys,
+        currentSelection.map(i => i[this.relatedKey])
+      );
 
-      // Filter out copies of the current relational parent item
-      newValue = newValue.map(item => {
-        if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
-          delete item[this.relatedField];
-        }
+      const newlySelected = newlySelectedPrimaryKeys.map(key => ({ [this.relatedKey]: key }));
 
-        return item;
-      });
+      newSelection = [...newSelection, ...newlySelected];
 
-      this.$emit("input", newValue);
-
-      this.selectExisting = false;
-      this.selectionSaving = false;
+      this.$emit("input", newSelection);
     },
-    dismissSelection() {
-      this.setSelection();
+
+    closeSelection() {
       this.selectExisting = false;
     },
+
     stageValue({ field, value }) {
       this.$set(this.edits, field, value);
     },
+
     saveEdits() {
       this.$emit("input", [
         ...(this.value || [])
@@ -533,6 +442,37 @@ export default {
     toggleManualSort() {
       this.sort.field = this.relatedSortField.field;
       this.sort.asc = true;
+    },
+
+    // Fetches the items for the current selection. This should be fired whenever the value is changed
+    // so we can render the previews for the right fields in the table
+    fetchItems() {
+      const value = _.clone(this.value || []).filter(item => item.$delete !== true);
+      const collection = this.relation.collection_many.collection;
+      const fields = this.visibleFields;
+      const primaryKeys = value.map(item => item[this.relatedKey]);
+
+      if (primaryKeys.length === 0) {
+        this.items = [];
+        return;
+      }
+
+      this.loading = true;
+
+      this.$api
+        .getItem(collection, primaryKeys, {
+          fields: fields
+        })
+        .then(res => res.data)
+        .then(items => {
+          if (Array.isArray(items)) {
+            this.items = items;
+          } else {
+            this.items = [items];
+          }
+        })
+        .catch(error => (this.error = error))
+        .finally(() => (this.loading = false));
     }
   }
 };
