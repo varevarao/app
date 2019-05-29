@@ -29,7 +29,7 @@
         </div>
 
         <draggable
-          v-model="items"
+          v-model="itemsSorted"
           class="body"
           handle=".drag-handle"
           ghost-class="o2m-drag-ghost"
@@ -39,10 +39,10 @@
           @end="dragging = false"
         >
           <div
-            v-for="item in items"
+            v-for="item in itemsSorted"
             :key="item[relatedKey]"
             class="row"
-            @click="editExisting = item"
+            @click="startEdit(item[relatedKey])"
           >
             <div v-if="sortable" class="sort-column" :class="{ disabled: !manualSortActive }">
               <v-icon name="drag_handle" class="drag-handle" />
@@ -96,14 +96,35 @@
       @close="closeSelection"
     />
 
+    <portal v-if="editExisting" to="modal">
+      <v-modal
+        :title="$t('editing_item')"
+        :buttons="{
+          save: {
+            text: 'Save',
+            color: 'accent'
+          }
+        }"
+        @close="editExisting = false"
+        @save="saveEdits"
+      >
+        <div class="edit-modal-body">
+          <v-form
+            :fields="relatedCollectionFields"
+            :values="editExisting"
+            @stage-value="stageValue"
+          ></v-form>
+        </div>
+      </v-modal>
+    </portal>
+
     <portal v-if="addNew" to="modal">
       <v-modal
         :title="$t('creating_item')"
         :buttons="{
           save: {
             text: 'Save',
-            color: 'accent',
-            loading: selectionSaving
+            color: 'accent'
           }
         }"
         @close="addNew = null"
@@ -151,6 +172,30 @@ export default {
     };
   },
   computed: {
+    // The items in this.items sorted by the information in this.sort
+    itemsSorted: {
+      get() {
+        return _.orderBy(
+          this.items,
+          item => item[this.sort.field],
+          this.sort.asc ? "asc" : "desc"
+        ).filter(item => item.$delete !== true);
+      },
+      set(newValue) {
+        let value = _.clone(newValue);
+
+        value = value.map((item, index) => {
+          return {
+            ...item,
+            [this.relatedSortField.field]: index + 1
+          };
+        });
+
+        this.emitValue(value);
+        this.items = value;
+      }
+    },
+
     // The field on the related collection that has the type of sort
     relatedSortField() {
       return _.find(this.relatedCollectionFields, { type: "sort" });
@@ -163,7 +208,8 @@ export default {
 
     // If the user currently sorted by the manual sort option
     manualSortActive() {
-      return this.sort.field === this.relatedSortField && this.relatedSortField.field;
+      if (!this.sortable) return false;
+      return this.sort.field === this.relatedSortField.field;
     },
 
     // If the relationship has been configured
@@ -237,33 +283,6 @@ export default {
         .map(item => item[this.relatedKey])
         .filter(key => key); // Filter out empty items
     }
-
-    //   items: {
-    //     get() {
-    //       if (this.relationSetup === false) return [];
-
-    //       return _.orderBy(
-    //         this.value || [],
-    //         item => item[this.sort.field],
-    //         this.sort.asc ? "asc" : "desc"
-    //       );
-    //     },
-    //     // The setter is used when <draggable> updates the sort order during manual sorting
-    //     set(newValue) {
-    //       let value = _.clone(newValue);
-
-    //       value = value.map((item, index) => {
-    //         const primaryKey = item[this.relatedKey];
-
-    //         return {
-    //           [this.relatedKey]: primaryKey,
-    //           [this.relatedSortField.field]: index + 1
-    //         };
-    //       });
-
-    //       this.$emit("input", value);
-    //     }
-    //   }
   },
   watch: {
     relation() {
@@ -289,18 +308,6 @@ export default {
     this.items = this.value;
   },
   methods: {
-    setViewOptions(updates) {
-      this.viewOptionsOverride = {
-        ...this.viewOptionsOverride,
-        ...updates
-      };
-    },
-    setViewQuery(updates) {
-      this.viewQueryOverride = {
-        ...this.viewQueryOverride,
-        ...updates
-      };
-    },
     changeSort(field) {
       if (this.sort.field === field) {
         this.sort.asc = !this.sort.asc;
@@ -342,7 +349,17 @@ export default {
 
       newSelection = [...newSelection, ...newlySelected];
 
-      this.$emit("input", newSelection);
+      this.emitValue(newSelection);
+    },
+
+    startEdit(primaryKey) {
+      const collection = this.relation.collection_many.collection;
+
+      this.$api
+        .getItem(collection, primaryKey)
+        .then(res => res.data)
+        .then(item => (this.editExisting = item))
+        .catch(console.error);
     },
 
     closeSelection() {
@@ -353,34 +370,39 @@ export default {
       this.$set(this.edits, field, value);
     },
 
+    // Emit the value to the parent component. Will filter out all nested copies of the current item
+    emitValue(value) {
+      // Filter out copies of the current relational parent item
+      value = value.map(item => {
+        if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
+          delete item[this.relatedField];
+        }
+
+        return item;
+      });
+
+      this.$emit("input", value);
+    },
+
     saveEdits() {
-      this.$emit("input", [
-        ...(this.value || [])
-          .map(val => {
-            if (val.id === this.editExisting[this.relatedKey]) {
-              return {
-                ...val,
-                ...this.edits
-              };
-            }
+      this.emitValue([
+        ...(this.value || []).map(val => {
+          if (val.id === this.editExisting[this.relatedKey]) {
+            return {
+              ...val,
+              ...this.edits
+            };
+          }
 
-            return val;
-          })
-          // Filter out copies of the current relational parent item
-          .map(item => {
-            if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
-              delete item[this.relatedField];
-            }
-
-            return item;
-          })
+          return val;
+        })
       ]);
 
       this.edits = {};
       this.editExisting = false;
     },
     addNewItem() {
-      this.$emit("input", [
+      this.emitValue([
         ...(this.value || []).map(item => {
           if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
             delete item[this.relatedField];
@@ -395,44 +417,28 @@ export default {
       this.addNew = false;
     },
     removeRelated(relatedKey) {
+      const currentSelection = _.clone(this.value || []);
+
+      let value;
+
       if (relatedKey) {
-        this.$emit(
-          "input",
-          (this.value || [])
-            .map(val => {
-              if (val[this.relatedKey] === relatedKey) {
-                return {
-                  [this.relatedKey]: val[this.relatedKey],
-                  $delete: true
-                };
-              }
+        value = currentSelection.map(val => {
+          if (val[this.relatedKey] === relatedKey) {
+            return {
+              [this.relatedKey]: val[this.relatedKey],
+              $delete: true
+            };
+          }
 
-              return val;
-            })
-            .map(item => {
-              if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
-                delete item[this.relatedField];
-              }
-
-              return item;
-            })
-        );
+          return val;
+        });
       } else {
-        this.$emit(
-          "input",
-          (this.value || [])
-            .filter(val => {
-              return val[this.relatedKey] !== relatedKey;
-            })
-            .map(item => {
-              if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
-                delete item[this.relatedField];
-              }
-
-              return item;
-            })
-        );
+        value = currentSelection.filter(val => {
+          return val[this.relatedKey] !== relatedKey;
+        });
       }
+
+      this.emitValue(value);
     },
     onSearchInput(value) {
       this.setViewQuery({
@@ -449,7 +455,7 @@ export default {
     fetchItems() {
       const value = _.clone(this.value || []).filter(item => item.$delete !== true);
       const collection = this.relation.collection_many.collection;
-      const fields = this.visibleFields;
+      const fields = [...this.visibleFields, this.relatedKey];
       const primaryKeys = value.map(item => item[this.relatedKey]);
 
       if (primaryKeys.length === 0) {
@@ -464,12 +470,17 @@ export default {
           fields: fields
         })
         .then(res => res.data)
+        .then(data => {
+          if (Array.isArray(data)) return data;
+          return [data];
+        })
         .then(items => {
-          if (Array.isArray(items)) {
-            this.items = items;
-          } else {
-            this.items = [items];
-          }
+          // Augment the values in this.value with the extra data from the API
+          this.items = items.map(item => {
+            const primaryKey = item[this.relatedKey];
+            const currentValue = _.find(this.value || [], { [this.relatedKey]: primaryKey });
+            return _.merge(item, currentValue);
+          });
         })
         .catch(error => (this.error = error))
         .finally(() => (this.loading = false));
