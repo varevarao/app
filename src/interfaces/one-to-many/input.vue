@@ -402,16 +402,7 @@ export default {
       this.editExisting = false;
     },
     addNewItem() {
-      this.emitValue([
-        ...(this.value || []).map(item => {
-          if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
-            delete item[this.relatedField];
-          }
-
-          return item;
-        }),
-        this.edits
-      ]);
+      this.emitValue([...(this.value || []), this.edits]);
 
       this.edits = {};
       this.addNew = false;
@@ -457,6 +448,7 @@ export default {
       const collection = this.relation.collection_many.collection;
       const fields = [...this.visibleFields, this.relatedKey];
       const primaryKeys = value.map(item => item[this.relatedKey]);
+      const newItems = value.filter(item => item[this.relatedKey] === undefined);
 
       if (primaryKeys.length === 0) {
         this.items = [];
@@ -476,11 +468,14 @@ export default {
         })
         .then(items => {
           // Augment the values in this.value with the extra data from the API
-          this.items = items.map(item => {
+          items = items.map(item => {
             const primaryKey = item[this.relatedKey];
             const currentValue = _.find(this.value || [], { [this.relatedKey]: primaryKey });
             return _.merge(item, currentValue);
           });
+
+          items = [...items, ...newItems];
+          this.items = items;
         })
         .catch(error => (this.error = error))
         .finally(() => (this.loading = false));
