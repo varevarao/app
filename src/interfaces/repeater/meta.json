@@ -57,7 +57,22 @@
             "type": "String",
             "options": {
               "choices": {
-                "JSON": "JSON", "String": "String", "Number": "Number", "Boolean": "Boolean"
+                "JSON": "JSON",
+                "String": "String",
+                "Integer": "Integer",
+                "Decimal": "Decimal",
+                "Boolean": "Boolean",
+                "File": "File",
+                "Sort": "Sort",
+                "Status": "Status",
+                "O2M": "O2M",
+                "M2M": "M2M",
+                "M2O": "M2O",
+                "Array": "Array",
+                "Date": "Date",
+                "Time": "Time",
+                "DateTime": "DateTime",
+                "Alias": "Alias"
               }
             },
             "default": "string"
