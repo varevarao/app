@@ -50,6 +50,10 @@ i {
 
   &.closed {
     height: calc(var(--input-height) + 4px);
+
+    .header :after {
+      display: none;
+    }
   }
 
   .header {
@@ -63,7 +67,7 @@ i {
     :after {
       content: "";
       position: absolute;
-      bottom: 0;
+      bottom: 1px;
       left: 10px;
       width: calc(100% - 20px);
       height: 2px;
