@@ -15,7 +15,7 @@
       </div>
       <div class="end">
         <v-icon :name="open ? 'unfold_less' : 'unfold_more'"></v-icon>
-        <v-icon name="delete" @click.native.stop="$emit('delete')"></v-icon>
+        <button @click.stop="$emit('delete')"><v-icon name="delete" /></button>
       </div>
     </div>
     <div class="container">
@@ -30,17 +30,32 @@
 
 <script>
 export default {
-  props: ["id", "headers", "fields", "data", "open"],
-  computed: {},
-  methods: {}
+  props: {
+    id: {
+      type: Number,
+      required: true
+    },
+    headers: {
+      type: Object,
+      required: true
+    },
+    fields: {
+      type: Object,
+      required: true
+    },
+    data: {
+      type: Object,
+      required: true
+    },
+    open: {
+      type: Boolean,
+      default: false
+    }
+  }
 };
 </script>
 
 <style lang="scss" scoped>
-i {
-  cursor: pointer;
-}
-
 .box {
   background-color: var(--lightest-gray);
   border-radius: var(--border-radius);
