@@ -2,7 +2,7 @@
   <div class="box" :class="{ closed: !open }">
     <div class="header" @click="$emit('open')">
       <div class="start">
-        <v-icon name="drag_handle"></v-icon>
+        <v-icon color="gray" name="drag_handle" />
         <v-ext-display
           v-for="(value, key) in headers"
           :key="key"
@@ -14,8 +14,8 @@
         ></v-ext-display>
       </div>
       <div class="end">
-        <v-icon :name="open ? 'unfold_less' : 'unfold_more'"></v-icon>
-        <button @click.stop="$emit('delete')"><v-icon name="delete" /></button>
+        <v-icon color="gray" :name="open ? 'unfold_less' : 'unfold_more'" />
+        <button @click.stop="$emit('delete')"><v-icon color="gray" name="delete" /></button>
       </div>
     </div>
     <div class="container">
@@ -57,11 +57,10 @@ export default {
 
 <style lang="scss" scoped>
 .box {
-  background-color: var(--lightest-gray);
   border-radius: var(--border-radius);
   border: 2px solid var(--lighter-gray);
   overflow: hidden;
-  margin: 10px 0;
+  margin: 16px 0;
 
   &.closed {
     height: calc(var(--input-height) + 4px);
@@ -73,11 +72,11 @@ export default {
 
   .header {
     position: relative;
-    padding: 10px;
     height: var(--input-height);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0 16px;
 
     :after {
       content: "";
@@ -103,7 +102,7 @@ export default {
   }
 
   .container {
-    padding: 10px;
+    padding: 16px;
 
     .form {
       grid-template-columns:
