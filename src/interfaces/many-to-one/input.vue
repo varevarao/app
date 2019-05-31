@@ -33,7 +33,6 @@
         :collection="relation.collection_one.collection"
         :fields="relatedFields"
         :filters="[]"
-        :selection="selection"
         single
         :value="valuePK"
         @input="emitValue"
@@ -78,10 +77,6 @@ export default {
       return this.value;
     },
     relatedFields() {
-      return this.options.visible_fields.split(",").map(f => f.trim());
-    },
-    selection() {
-      if (!this.value) return [];
       let visibleFields = this.options.visible_fields;
 
       // If the visible fields option hasn't been filled out, use the display template string instead
