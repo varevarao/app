@@ -5,7 +5,7 @@
     </v-notice>
 
     <template v-else>
-      <div v-if="items.length" class="table">
+      <div v-if="itemsRaw.length" class="table">
         <div class="header">
           <div class="row">
             <button v-if="sortable" class="sort-column" @click="toggleManualSort">
@@ -42,7 +42,7 @@
             v-for="item in itemsSorted"
             :key="item[relatedKey]"
             class="row"
-            @click="startEdit(item[relatedKey])"
+            @click="startEdit(item[relatedKey], item.$tempKey)"
           >
             <div v-if="sortable" class="sort-column" :class="{ disabled: !manualSortActive }">
               <v-icon name="drag_handle" class="drag-handle" />
@@ -111,6 +111,7 @@
         <div class="edit-modal-body">
           <v-form
             :fields="relatedCollectionFields"
+            :collection="relatedCollection"
             :values="editExisting"
             @stage-value="stageValue"
           ></v-form>
@@ -145,6 +146,7 @@
 </template>
 
 <script>
+import shortid from "shortid";
 import mixin from "@directus/extension-toolkit/mixins/interface";
 
 export default {
@@ -166,13 +168,24 @@ export default {
       dragging: false,
 
       // Items to be rendered in the table preview
-      items: [],
+      itemsRaw: [],
       loading: false,
       error: null
     };
   },
   computed: {
-    // The items in this.items sorted by the information in this.sort
+    items() {
+      const primaryKey = this.relatedKey;
+      return this.itemsRaw.map(item => {
+        if (item.hasOwnProperty(primaryKey)) return item;
+        return {
+          ...item,
+          $tempKey: shortid.generate()
+        };
+      });
+    },
+
+    // The items in this.itemsRaw sorted by the information in this.sort
     itemsSorted: {
       get() {
         return _.orderBy(
@@ -192,7 +205,7 @@ export default {
         });
 
         this.emitValue(value);
-        this.items = value;
+        this.itemsRaw = value;
       }
     },
 
@@ -216,6 +229,10 @@ export default {
     relationSetup() {
       if (!this.relation) return false;
       return true;
+    },
+
+    relatedCollection() {
+      return this.relation.collection_many.collection;
     },
 
     // Fields in the related collection
@@ -304,8 +321,7 @@ export default {
     }
 
     this.onSearchInput = _.debounce(this.onSearchInput, 200);
-
-    this.items = this.value;
+    this.itemsRaw = this.value;
   },
   methods: {
     changeSort(field) {
@@ -352,7 +368,13 @@ export default {
       this.emitValue(newSelection);
     },
 
-    startEdit(primaryKey) {
+    startEdit(primaryKey, tempKey) {
+      if (!primaryKey) {
+        const values = _.find(this.items, { $tempKey: tempKey });
+        this.editExisting = values;
+        return;
+      }
+
       const collection = this.relation.collection_many.collection;
 
       this.$api
@@ -376,6 +398,15 @@ export default {
       value = value.map(item => {
         if (typeof item === "object" && item.hasOwnProperty(this.relatedField)) {
           delete item[this.relatedField];
+        }
+
+        return item;
+      });
+
+      // Filter out the temporary IDs
+      value = value.map(item => {
+        if (item.hasOwnProperty("$tempKey")) {
+          delete item.$tempKey;
         }
 
         return item;
@@ -451,7 +482,7 @@ export default {
       const newItems = value.filter(item => item[this.relatedKey] === undefined);
 
       if (primaryKeys.length === 0) {
-        this.items = [];
+        this.itemsRaw = [];
         return;
       }
 
@@ -475,7 +506,7 @@ export default {
           });
 
           items = [...items, ...newItems];
-          this.items = items;
+          this.itemsRaw = items;
         })
         .catch(error => (this.error = error))
         .finally(() => (this.loading = false));
