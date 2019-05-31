@@ -15,8 +15,7 @@ export default {
   mixins: [mixin],
   computed: {
     valueFields() {
-      return this.$lodash
-        .chain(this.options.fields)
+      return _.chain(this.options.fields)
         .pickBy(value => {
           return value.hasOwnProperty("preview") && value.preview;
         })

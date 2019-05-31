@@ -4,8 +4,8 @@
       <draggable v-model="boxes">
         <Box
           v-for="(value, index) in boxes"
-          :key="index"
           :id="index"
+          :key="index"
           :headers="headers"
           :fields="formFields"
           :data="value"
@@ -27,24 +27,24 @@ import mixin from "@directus/extension-toolkit/mixins/interface";
 import Box from "./box.vue";
 
 export default {
+  components: {
+    Box
+  },
   mixins: [mixin],
   data() {
     return {
       open: null
     };
   },
-  components: {
-    Box
-  },
   computed: {
     headers() {
-      return this.$lodash.pickBy(this.options.fields, value => {
+      return _.pickBy(this.options.fields, value => {
         return value.hasOwnProperty("preview") && value.preview;
       });
     },
     formFields() {
       var fields = this.options.fields;
-      this.$lodash.forOwn(fields, (value, key) => {
+      _.forOwn(fields, (value, key) => {
         fields[key].hidden_detail = false;
         if (!fields[key].hasOwnProperty("field")) fields[key].field = key;
       });
@@ -60,7 +60,7 @@ export default {
       return this.boxes.length;
     },
     indexType() {
-      var field = this.$lodash.find(this.options.fields, { index: true });
+      var field = _.find(this.options.fields, { index: true });
       if (field && field.field) {
         return field.field;
       } else {
@@ -74,13 +74,13 @@ export default {
       get() {
         if (this.dataType == "value") {
           var boxes = [];
-          var fields = this.$lodash.keys(this.options.fields);
-          this.$lodash.forOwn(this.value, (value, key) => {
+          var fields = _.keys(this.options.fields);
+          _.forOwn(this.value, (value, key) => {
             boxes.push({ [fields[0]]: value, [fields[1]]: key });
           });
           return boxes;
         } else {
-          return this.$lodash.values(this.$lodash.cloneDeep(this.value)) || [];
+          return _.values(_.cloneDeep(this.value)) || [];
         }
       },
       set(values) {
@@ -88,8 +88,7 @@ export default {
         for (var i = 0; i < values.length; i++) {
           var value = null;
           if (this.dataType == "value") {
-            var fields = this.$lodash
-              .chain(this.options.fields)
+            var fields = _.chain(this.options.fields)
               .pickBy(b => {
                 return !b.hasOwnProperty("index") || !b.index;
               })
@@ -113,7 +112,7 @@ export default {
   methods: {
     addBox() {
       var box = {};
-      this.$lodash.forOwn(this.options.fields, (value, key) => {
+      _.forOwn(this.options.fields, (value, key) => {
         box[key] = null;
       });
 
@@ -122,7 +121,7 @@ export default {
       this.boxes = this.boxes;
     },
     deleteBox(key) {
-      this.$lodash.remove(this.boxes, (value, index) => {
+      _.remove(this.boxes, (value, index) => {
         return index == key;
       });
       this.boxes = this.boxes;
