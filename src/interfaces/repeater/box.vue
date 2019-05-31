@@ -49,7 +49,7 @@ i {
   margin: 10px 0;
 
   &.closed {
-    height: var(--input-height);
+    height: calc(var(--input-height) + 4px);
   }
 
   .header {
